@@ -17,17 +17,34 @@ $config['plugin.contextmenu_folder.enable_refresh'] = false; // TODO
 // apply mailbox filter on server vs on client
 $config['plugin.contextmenu_folder.enable_client_filter'] = true;
 
-// actiate plugin context popup menu on mailbox list elemenets 
+// activate plugin context popup menu on mailbox list elemenets 
 $config['plugin.contextmenu_folder.enable_folder_list_context_menu'] = true;
 
-// actiate plugin control popup menu on mailbox list footer tool box
+// activate plugin control popup menu on mailbox list footer tool box
 $config['plugin.contextmenu_folder.enable_folder_list_control_menu'] = true;
 
-// actiate 'create contact folder form email address' feature
+// activate 'create contact folder form email address' feature
 $config['plugin.contextmenu_folder.enable_message_list_context_menu'] = true;
 
-// 'selected' folder icon, choose from assets/fontello
-$config['plugin.contextmenu_folder.icon_class_selected'] = 'folder-icon-heart-white';
+// plugin ui icon classes, choose from assets/fontello
+$config['plugin.contextmenu_folder.icon_mapa'] = array(
+        'show_all' => 'folder-icon-globe-earth',
+        'show_active' => 'folder-icon-wifi-bold',
+        'show_favorite' => 'folder-icon-heart-black',
+        'folder_select' => 'folder-icon-thumbs-up-1',
+        'folder_unselect' => 'folder-icon-thumbs-down-1',
+        // 'folder_clean' => 'folder-icon-trash-wire',
+        'folder_create' => 'folder-icon-folder-plus',
+        'folder_delete' => 'folder-icon-folder-minus',
+        'folder_rename' => 'folder-icon-pencil-tip',
+        'folder_locate' => 'folder-icon-search-large',
+        'folder_purge' => 'folder-icon-trash-can-iso',
+        'folder_read_tree' => 'folder-icon-check-heavy',
+        'reset_selected' => 'folder-icon-right-hand',
+        'reset_transient' => 'folder-icon-hour-white',
+        'mark_selected' => 'folder-mark-upper-left folder-icon-heart-white',
+        'mark_transient' => 'folder-mark-lower-left folder-icon-hour-white',
+);
 
 // XXX no override
 // avilable mailbox filter options
@@ -69,28 +86,28 @@ $config['plugin.contextmenu_folder.predefined_list'] = array(
 
 // persisted mailboxes included in the 'special' filter type
 $config['plugin.contextmenu_folder.collect_special'] = array(
-        'default' => array(),
+        'default' => array( 'created_msec' => 0 ),
 );
 
 // persisted mailboxes included in the 'selected' filter type
 $config['plugin.contextmenu_folder.collect_selected'] = array(
-        'default' => array(),
+        'default' => array( 'created_msec' => 0 ),
 );
 
 // persisted mailboxes included in the 'transient' filter type
 $config['plugin.contextmenu_folder.collect_transient'] = array(
-        'default' => array(),
+        'default' => array( 'created_msec' => 0 ),
 );
 
 // persisted mailboxes included in the 'predefined' filter type
 $config['plugin.contextmenu_folder.collect_predefined'] = array(
-        'default' => array(),
+        'default' => array( 'created_msec' => 0 ),
 );
 
-// expiration time for auto reset of transient mailbox collection, minutes
-$config['plugin.contextmenu_folder.transient_expire_time'] = 100; // TODO
+// expiration time for auto remove of transient mailbox collection, minutes
+$config['plugin.contextmenu_folder.transient_expire_mins'] = 20;
 
-// current show mode
+// current filter
 $config['plugin.contextmenu_folder.show_mode'] = 'show_all';
 
 // client ui state 
@@ -106,11 +123,25 @@ $config['plugin.contextmenu_folder.feature_choice'] = array(
         'remember_filter',
         'remember_mailbox',
         'remember_message',
-//        'transient_on_create',
-//        'transient_on_delete',
-//        'transient_on_rename', 
-//        'transient_on_locate',
-        'filter_on_mbox_mark_read', 
+        'track_on_create',
+        'track_on_delete',
+        'track_on_rename', 
+        'track_on_locate',
+        'filter_on_mbox_mark_read',
+        'render_selected',
+        'render_transient',
+        'replace_menu_purge',
+        // 'allow_purge_any',
+        // 'allow_purge_junk',
+        'allow_purge_trash',
+        // 'allow_purge_regex',
+        // 'hide_menu_link',
+        // 'hide_ctrl_menu',
+        // 'hide_mbox_menu',
+        // 'hide_mesg_menu',
+        'expire_transient',
+        'filter_on_expire_transient',
+        'footer_contextmenu',
 );
 
 // available select/options
@@ -118,14 +149,49 @@ $config['plugin.contextmenu_folder.feature_choice.list'] = array(
         'remember_filter', // restore filter on session load
         'remember_mailbox', // restore last selected mailbox
         'remember_message', // restore last selected message
-//        'transient_on_create', // track mailbox create in transient
-//        'transient_on_delete', // track mailbox delete in transient
-//        'transient_on_rename', // track mailbox rename in transient
-//        'transient_on_locate', // track mailbox locate in transient
+        'track_on_create', // track mailbox create in transient collection
+        'track_on_delete', // track mailbox delete in transient collection
+        'track_on_rename', // track mailbox rename in transient collection
+        'track_on_locate', // track mailbox locate in transient collection
         'filter_on_mbox_mark_read', // apply filter after mark read of mbox or tree
+        'render_selected', // display 'mark_selected' icon on mailbox
+        'render_transient', // display 'mark_transient' icon on mailbox
+        'replace_menu_purge', // override 'empty/purge' context menu command
+        'allow_purge_any', // permit to discard messages from any folder
+        'allow_purge_junk', // permit to discard messages only form 'junk'
+        'allow_purge_trash', // permit to discard messages only form 'trash'
+        'allow_purge_regex', // permit to discard messages matched with regex
+        'hide_menu_link', // remove default mailbox list footer button
+        'hide_ctrl_menu', // remove mailbox control menu items matched by selector
+        'hide_mbox_menu', // remove mailbox context menu items matched by selector
+        'hide_mesg_menu', // remove message context menu items matched by selector
+        'expire_transient', // auto remove mailbox from transient collection 
+        'filter_on_expire_transient', // apply filter after transient mailbox expiration
+        'footer_contextmenu', // enable mouse 'contextmenu' for all mbox list footer buttons
 );
 
-// rules for making contact folder derived from mail headers
+// permit to discard messages matched with regex
+$config['plugin.contextmenu_folder.allow_purge_regex'] = '^Archive/Discard/.*$';
+
+// remove mailbox control menu items matched by selector, enabled by feature_choice:hide_ctrl_menu
+$config['plugin.contextmenu_folder.hide_ctrl_menu_list'] = array(
+        'div[id="rcm_plugin.contextmenu_folder.status_menu"] li:has(a[class*="folder_locate"])', // remove folder locate
+);
+
+// remove mailbox context menu items matched by selector, enabled by feature_choice:hide_mbox_menu
+$config['plugin.contextmenu_folder.hide_mbox_menu_list'] = array(
+        'div[id="rcm_folderlist"] li:has(a[class*="cmd_expunge"])', // remove mailbox compact
+        'div[id="rcm_folderlist"] li:has(a[class*="collapseall"])', // remove mailbox collapse
+        'div[id="rcm_folderlist"] li:has(a[class*="expandall"])', // remove mailbox expand
+);
+
+// remove message context menu items matched by selector, enabled by feature_choice:hide_mesg_menu
+$config['plugin.contextmenu_folder.hide_mesg_menu_list'] = array(
+        'div[id="rcm_messagemenu-menu"] li:has(a[class*="cmd_copy"])', // remove message copy via folder menu
+        'div[id="rcm_messagemenu-menu"] li:has(a[class*="cmd_move"])', // remove message move via folder menu
+);
+
+// templates for making contact folder derived from mail headers
 $config['plugin.contextmenu_folder.contact_folder_format_list'] = array(
         
         '{parent}/{full_name} @{domain}',
@@ -181,7 +247,7 @@ $config['plugin.contextmenu_folder.domain_country_list'] = array(
 "ve","vg","vi","vn","vu","wf","ws","ye","yt","yu","za","zm","zr","zw",
 );
 
-////////
+//////// settings
 
 // expose these settings in user ui
 $config['plugin.contextmenu_folder.settings_checkbox_list'] = array(
@@ -207,12 +273,14 @@ $config['plugin.contextmenu_folder.settings_area_list'] = array(
         'contact_folder_format_list',
         // 'domain_generic_list',
         // 'domain_country_list',
+        // 'hide_ctrl_menu_list',
+        // 'hide_mbox_menu_list',
+        // 'hide_mesg_menu_list',
 );
 
 // expose these settings in user ui
 $config['plugin.contextmenu_folder.settings_text_list'] = array(
-        // 'transient_expire_time', // TODO
-        // 'icon_class_selected',
+       'transient_expire_mins',
 );
 
 ?>

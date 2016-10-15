@@ -40,9 +40,14 @@ class contextmenu_folder extends rcube_plugin {
         'enable_message_list_context_menu', 
         'filter_active',
         'filter_favorite',
-        'icon_class_selected',
         'contact_folder_format_list',
         'feature_choice',
+        'icon_mapa',
+        'allow_purge_regex',
+        'hide_ctrl_menu_list',
+        'hide_mbox_menu_list',
+        'hide_mesg_menu_list',
+        'transient_expire_mins',
     );
     
     // plugin ajax registered actions
@@ -56,6 +61,7 @@ class contextmenu_folder extends rcube_plugin {
         'folder_delete',
         'folder_locate',
         'folder_rename',
+        'folder_purge',
         'folder_select',
         'folder_scan_tree',
     );
@@ -637,7 +643,7 @@ class contextmenu_folder extends rcube_plugin {
           
         $source = $this->input_value('source');
         $target = $this->input_value('target');
-            $result = $storage->rename_folder($source, $target);
+        $result = $storage->rename_folder($source, $target);
         if ($result) {
             $this->folder_transient_unset($source);
             $this->folder_transient_set($target);
@@ -646,6 +652,45 @@ class contextmenu_folder extends rcube_plugin {
         } else {
             $this->rc->display_server_error('error folder_rename');
         }
+    }
+    
+    // XXX see steps/mail/folders.inc
+    function folder_reset($RCMAIL, $OUTPUT, $mbox) {
+        $trash_mbox   = $RCMAIL->config->get('trash_mbox');
+        //
+        $OUTPUT->show_message('folderpurged', 'confirmation');
+        if (!empty($_REQUEST['_reload'])) {
+            $OUTPUT->set_env('messagecount', 0);
+            $OUTPUT->set_env('pagecount', 0);
+            $OUTPUT->set_env('exists', 0);
+            $OUTPUT->command('message_list.clear');
+            $OUTPUT->command('set_rowcount', rcmail_get_messagecount_text(), $mbox);
+            $OUTPUT->command('set_unread_count', $mbox, 0);
+            $OUTPUT->command('set_quota', $RCMAIL->quota_content(null, $mbox));
+            rcmail_set_unseen_count($mbox, 0);
+            if ($mbox === $trash_mbox) {
+                $OUTPUT->command('set_trash_count', 0);
+            }
+        }
+    }
+
+    // empty imap folder of all messages
+    public function action_folder_purge() {
+        $output = $this->rc->output;
+        $storage = $this->rc->storage;
+        
+        $source = $this->input_value('source');
+        $target = $this->input_value('target');
+        $result = $storage->clear_folder($target);
+        if ($result) {
+            // $this->folder_reset($this->rc, $output, $target);
+            $output->show_message('folderpurged', 'confirmation');
+        } else {
+            $this->rc->display_server_error('error folder_purge');
+        }
+        
+        $output->command($this->key('folder_purge'), array());
+        $output->send();
     }
 
     // switch ui to provided mailbox 
@@ -811,6 +856,11 @@ class contextmenu_folder extends rcube_plugin {
         return $this->config_get('settings_area_list');
     }
 
+    // settings exposed to user
+    function settings_text_list() {
+        return $this->config_get('settings_text_list');
+    }
+    
     // settings checkbox
     function build_checkbox(& $entry, $name) {
         $key = $this->key($name);
@@ -852,6 +902,18 @@ class contextmenu_folder extends rcube_plugin {
         );
     }
     
+    // settings single line text input
+    function build_text(& $entry, $name) {
+        $key = $this->key($name);
+        $input = new html_inputfield(array(
+             'id' => $key, 'name' => $key, 'value' => 1,
+        ));
+        $entry['options'][$name] = array(
+            'title' => html::label($key, $this->quoted($name)),
+            'content' => $input->show($this->config_get($name)),
+        );
+    }
+    
     // build settings ui
     function hook_preferences_list($args) {
         if ($this->is_plugin_section($args)) {
@@ -867,6 +929,9 @@ class contextmenu_folder extends rcube_plugin {
             }
             foreach($this->settings_area_list() as $name) {
                 $this->build_textarea($entry, $name);
+            }
+            foreach($this->settings_text_list() as $name) {
+                $this->build_text($entry, $name);
             }
         }
         return $args;
@@ -893,7 +958,13 @@ class contextmenu_folder extends rcube_plugin {
         // sort($value); // alpha sorted
         $prefs[$key] = $value;
     }
-  
+
+    // settings single line text input
+    function persist_text(& $prefs, $name) {
+        $key = $this->key($name); $value = $this->input_value($key);
+        $prefs[$key] = trim($value);
+    }
+    
     // persist user settings
     function hook_preferences_save($args) {
         if ($this->is_plugin_section($args)) {
@@ -907,6 +978,9 @@ class contextmenu_folder extends rcube_plugin {
             }
             foreach($this->settings_area_list() as $name) {
                 $this->persist_textarea($prefs, $name);
+            }
+            foreach($this->settings_text_list() as $name) {
+                $this->persist_text($prefs, $name);
             }
         }
         return $args;

@@ -11,6 +11,8 @@ $labels['folder_delete'] = 'Delete folder';
 $labels['folder_rename'] = 'Rename folder';
 $labels['folder_locate'] = 'Locate folder';
 
+$labels['folder_purge'] = 'Purge folder';
+
 $labels['folder_read_this'] = 'Folder mark read';
 $labels['folder_read_tree'] = 'Folder tree read';
 
@@ -75,5 +77,7 @@ $labels['filter_favorite'] = 'Filters in category "favorite"';
 
 $labels['predefined_list'] = 'Folders in "predefined" filter';
 $labels['contact_folder_format_list'] = 'Contact mailbox format templates';
+
+$labels['transient_expire_mins'] = 'Transient folder expiration time (mins)';
 
 ?>
